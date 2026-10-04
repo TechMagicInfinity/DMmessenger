@@ -1,31 +1,32 @@
 const { app, BrowserWindow, Menu, Notification } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
-
-// Без этого AppImage на многих системах падает с ошибкой про SUID sandbox —
-// тот же флаг уже используется в dev-режиме (см. "start" в package.json),
-// тут просто зашиваем его и в собранное приложение, чтобы не заставлять
-// друзей запускать через терминал с флагами.
-app.commandLine.appendSwitch('no-sandbox');
-app.commandLine.appendSwitch('disable-dev-shm-usage');
-
+ 
+// AppImage на части Linux-систем падает из-за SUID sandbox, поэтому
+// отключаем песочницу Chromium только на Linux. Это нужно задать ДО
+// app.whenReady().
+// ВАЖНО: флаг 'disable-dev-shm-usage' убран намеренно. Он заставлял
+// Chromium создавать разделяемую память в /tmp вместо /dev/shm, из-за чего
+// на ряде систем окно оставалось чёрным (ошибка "Creating shared memory
+// in /tmp ... failed"). Нужен он только в Docker с крошечным /dev/shm.
+if (process.platform === 'linux') {
+  app.commandLine.appendSwitch('no-sandbox');
+}
+ 
 // --- автообновление через GitHub Releases ---
-// electron-builder (уже настроен в package.json) публикует релизы на
-// GitHub, а electron-updater при каждом запуске тихо проверяет, нет ли
-// версии новее текущей, и если есть — скачивает её в фоне. Работает
-// только в СОБРАННОМ приложении (установленном .exe/.AppImage), в
-// режиме разработки (npm start) просто ничего не делает — это ожидаемо.
+// Работает только в СОБРАННОМ приложении; в режиме разработки (npm start)
+// проверка пропускается.
 autoUpdater.autoDownload = true;
 autoUpdater.autoInstallOnAppQuit = true; // поставится при следующем закрытии
-
+ 
 autoUpdater.on('error', (err) => {
   console.error('Автообновление: ошибка', err);
 });
-
+ 
 autoUpdater.on('update-available', (info) => {
   console.log('Автообновление: найдена версия', info.version, '— скачиваю...');
 });
-
+ 
 autoUpdater.on('update-downloaded', (info) => {
   console.log('Автообновление: версия', info.version, 'скачана');
   if (Notification.isSupported()) {
@@ -35,7 +36,7 @@ autoUpdater.on('update-downloaded', (info) => {
     }).show();
   }
 });
-
+ 
 function createWindow() {
   const win = new BrowserWindow({
     width: 980,
@@ -50,13 +51,24 @@ function createWindow() {
       sandbox: true,
     },
   });
-
+ 
   Menu.setApplicationMenu(null); // убираем стандартное меню File/Edit/View
+ 
+  // Диагностика: если окно снова окажется пустым, причина будет в терминале.
+  win.webContents.on('render-process-gone', (event, details) => {
+    console.error('render gone', details);
+  });
+  win.webContents.on('did-fail-load', (event, code, desc, url) => {
+    console.error('load fail', code, desc, url);
+  });
+  win.webContents.on('console-message', (event, level, message) => {
+    console.log('RENDERER:', message);
+  });
+ 
   win.loadFile(path.join(__dirname, 'index.html'));
-
+ 
   // Без системного меню пропадает и стандартный шорткат для DevTools —
-  // возвращаем его вручную, чтобы можно было отлаживать (в т.ч. смотреть
-  // ошибки шифрования в консоли).
+  // возвращаем его вручную.
   win.webContents.on('before-input-event', (event, input) => {
     const isDevToolsShortcut =
       input.control && input.shift && input.key.toLowerCase() === 'i';
@@ -65,17 +77,22 @@ function createWindow() {
     }
   });
 }
-
+ 
 app.whenReady().then(() => {
   createWindow();
-
-  autoUpdater.checkForUpdates(); // тихая проверка при каждом запуске
-
+ 
+  // Тихая проверка обновлений; ошибка не должна влиять на окно.
+  if (app.isPackaged) {
+    autoUpdater.checkForUpdates().catch((err) => {
+      console.error('Автообновление: не удалось проверить', err);
+    });
+  }
+ 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 });
-
+ 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
