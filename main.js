@@ -48,7 +48,11 @@ function createWindow() {
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true,
+      // OS-песочница рендерера здесь отключена: на части Linux-систем
+      // (AppImage) она ломает создание shared memory ("No such process"),
+      // рендерер падает и окно остаётся чёрным. Изоляция остаётся за
+      // contextIsolation: true и nodeIntegration: false.
+      sandbox: false,
     },
   });
  
