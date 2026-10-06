@@ -9,32 +9,71 @@ const { execFile } = require('child_process');
 // app.whenReady().
 // ВАЖНО: флаг 'disable-dev-shm-usage' убран намеренно. Он заставлял
 // Chromium создавать разделяемую память в /tmp вместо /dev/shm, из-за чего
-// на ряде систем окно оставалось чёрным (ошибка "Creating shared memory
-// in /tmp ... failed"). Нужен он только в Docker с крошечным /dev/shm.
+// на ряде систем окно оставалось чёрным.
 if (process.platform === 'linux') {
   app.commandLine.appendSwitch('no-sandbox');
 }
  
-// --- интеграция с рабочим столом (только для AppImage на Linux) ---
-// При запуске AppImage переменная APPIMAGE содержит путь к самому файлу.
-// Создаём ярлык в ~/.local/share/applications и копируем туда иконку,
-// чтобы приложение появилось в поиске Super и имело нормальную иконку.
-function integrateWithDesktop() {
-  const appImage = process.env.APPIMAGE;
-  if (process.platform !== 'linux' || !appImage) return;
+// --- установка в постоянное место + ярлык (только AppImage на Linux) ---
+// При первом запуске AppImage копирует себя в ~/.local/share/fnlink/
+// (папка скрытая, потому что ~/.local начинается с точки), создаёт там
+// ярлык для меню и иконку. Дальше ярлык запускает именно эту копию, она же
+// обновляется автообновлением. Исходный скачанный файл не трогаем.
+// Отключить всё это: запустить с переменной FNLINK_NO_INSTALL=1.
+function compareVersions(a, b) {
+  const pa = String(a).split('.').map(Number);
+  const pb = String(b).split('.').map(Number);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const d = (pa[i] || 0) - (pb[i] || 0);
+    if (d !== 0) return d;
+  }
+  return 0;
+}
+ 
+async function integrateWithDesktop() {
+  const running = process.env.APPIMAGE;
+  if (process.platform !== 'linux' || !running) return;
+  if (process.env.FNLINK_NO_INSTALL) return;
  
   try {
     const dataHome =
       process.env.XDG_DATA_HOME || path.join(app.getPath('home'), '.local', 'share');
+    const installDir = path.join(dataHome, 'fnlink');
+    const installed = path.join(installDir, 'FNLink.AppImage');
+    const versionFile = path.join(installDir, 'version.txt');
     const desktopDir = path.join(dataHome, 'applications');
     const iconDir = path.join(dataHome, 'icons');
     const desktopFile = path.join(desktopDir, 'fnlink.desktop');
     const iconFile = path.join(iconDir, 'fnlink.png');
     const marker = path.join(app.getPath('userData'), 'desktop-integrated');
-    const execLine = `Exec="${appImage}" %U`;
  
-    // Ярлык уже есть: если AppImage перенесли в другую папку, чиним только Exec.
+    // 1. Постоянная копия AppImage
+    let target = running;
+    if (path.resolve(running) === path.resolve(installed)) {
+      // уже запущены из постоянного места (в т.ч. после автообновления)
+      fs.writeFileSync(versionFile, app.getVersion());
+    } else {
+      let installedVersion = null;
+      if (fs.existsSync(installed) && fs.existsSync(versionFile)) {
+        installedVersion = fs.readFileSync(versionFile, 'utf8').trim();
+      }
+      // копируем, если копии нет или запущенная версия новее
+      if (!installedVersion || compareVersions(app.getVersion(), installedVersion) > 0) {
+        await fs.promises.mkdir(installDir, { recursive: true });
+        const tmp = installed + '.tmp';
+        await fs.promises.copyFile(running, tmp);
+        await fs.promises.chmod(tmp, 0o755);
+        await fs.promises.rename(tmp, installed);
+        fs.writeFileSync(versionFile, app.getVersion());
+      }
+      target = installed;
+    }
+ 
+    // 2. Ярлык и иконка
+    const execLine = `Exec="${target}" %U`;
+ 
     if (fs.existsSync(desktopFile)) {
+      // ярлык уже есть: чиним только путь запуска, если он изменился
       const current = fs.readFileSync(desktopFile, 'utf8');
       if (!current.includes(execLine)) {
         fs.writeFileSync(desktopFile, current.replace(/^Exec=.*$/m, () => execLine));
@@ -42,8 +81,7 @@ function integrateWithDesktop() {
       return;
     }
  
-    // Ярлыка нет, но мы его уже создавали: пользователь удалил его сам,
-    // второй раз не навязываем.
+    // ярлыка нет, но мы его уже создавали: пользователь удалил его сам
     if (fs.existsSync(marker)) return;
  
     fs.mkdirSync(desktopDir, { recursive: true });
@@ -73,16 +111,13 @@ function integrateWithDesktop() {
     fs.mkdirSync(path.dirname(marker), { recursive: true });
     fs.writeFileSync(marker, '1');
  
-    // Обновить базу ярлыков; если команды нет, не страшно.
     execFile('update-desktop-database', [desktopDir], () => {});
   } catch (err) {
-    console.error('Не удалось создать ярлык:', err);
+    console.error('Не удалось установить ярлык/копию:', err);
   }
 }
  
 // --- автообновление через GitHub Releases ---
-// Работает только в СОБРАННОМ приложении; в режиме разработки (npm start)
-// проверка пропускается.
 autoUpdater.autoDownload = true;
 autoUpdater.autoInstallOnAppQuit = true; // поставится при следующем закрытии
  
@@ -115,10 +150,9 @@ function createWindow() {
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
-      // OS-песочница рендерера здесь отключена: на части Linux-систем
-      // (AppImage) она ломает создание shared memory ("No such process"),
-      // рендерер падает и окно остаётся чёрным. Изоляция остаётся за
-      // contextIsolation: true и nodeIntegration: false.
+      // OS-песочница рендерера отключена: на части Linux-систем (AppImage)
+      // она ломает создание shared memory, рендерер падает и окно чёрное.
+      // Изоляция остаётся за contextIsolation: true и nodeIntegration: false.
       sandbox: false,
     },
   });
@@ -141,8 +175,7 @@ function createWindow() {
  
   win.loadFile(path.join(__dirname, 'index.html'));
  
-  // Без системного меню пропадает и стандартный шорткат для DevTools —
-  // возвращаем его вручную.
+  // Без системного меню пропадает и шорткат для DevTools — возвращаем вручную.
   win.webContents.on('before-input-event', (event, input) => {
     const isDevToolsShortcut =
       input.control && input.shift && input.key.toLowerCase() === 'i';
@@ -154,7 +187,7 @@ function createWindow() {
  
 app.whenReady().then(() => {
   createWindow();
-  integrateWithDesktop();
+  integrateWithDesktop(); // копирование идёт в фоне, окно не ждёт
  
   // Тихая проверка обновлений; ошибка не должна влиять на окно.
   if (app.isPackaged) {
