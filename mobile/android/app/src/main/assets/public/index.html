@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src *;" />
+<title>Микро-мессенджер</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- Экран входа / регистрации -->
+<div id="auth-screen" class="screen">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <span class="auth-brand-dot"></span>
+      микро-мессенджер
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="login">Вход</button>
+      <button class="tab" data-tab="register">Регистрация</button>
+    </div>
+
+    <form id="login-form" class="auth-form">
+      <label>Ник
+        <input type="text" id="login-username" placeholder="_Defender13_" required />
+      </label>
+      <label>Пароль
+        <input type="password" id="login-password" required />
+      </label>
+      <button type="submit" class="btn-primary">Войти</button>
+      <div class="auth-error" id="login-error"></div>
+    </form>
+
+    <form id="register-form" class="auth-form hidden">
+      <label>Ник
+        <input type="text" id="register-username" placeholder="Придумай ник" required />
+      </label>
+      <label>Пароль
+        <input type="password" id="register-password" placeholder="Минимум 6 символов" required />
+      </label>
+      <label>Повторите пароль
+        <input type="password" id="register-password-confirm" required />
+      </label>
+      <button type="submit" class="btn-primary">Зарегистрироваться</button>
+      <div class="auth-error" id="register-error"></div>
+    </form>
+  </div>
+</div>
+
+<!-- Экран чата -->
+<div id="chat-screen" class="screen hidden">
+  <nav class="folder-rail" id="folder-rail"></nav>
+
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <span class="status-dot" id="status-dot"></span>
+      <span id="status-text">подключение...</span>
+      <button id="settings-btn" title="Настройки">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+      <button id="logout-btn" title="Выйти">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="contact-search">
+      <input type="text" id="contact-search-input" placeholder="@юзернейм" />
+      <button type="button" id="contact-search-btn">Найти</button>
+    </div>
+    <div class="contact-search-result hidden" id="contact-search-result"></div>
+
+    <div class="chat-list" id="chat-list"></div>
+
+    <div class="sidebar-footer" id="sidebar-footer">
+      <span class="footer-avatar" id="footer-avatar"></span>
+      <span id="me-username"></span>
+    </div>
+  </aside>
+
+  <main class="chat-main">
+    <header class="chat-header">
+      <span id="current-chat-title">Выбери чат</span>
+      <div class="chat-header-actions">
+        <button id="contact-panel-toggle-btn" title="Инфо о собеседнике">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="16" x2="12" y2="12"/>
+            <line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+        </button>
+        <button id="friend-requests-btn" title="Заявки в друзья">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+          <span class="badge-count hidden" id="friend-requests-badge">0</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="messages" id="messages"></div>
+
+    <form id="send-form" class="send-form">
+      <input type="text" id="message-input" placeholder="Сообщение..." autocomplete="off" />
+      <button type="submit">Отправить</button>
+    </form>
+  </main>
+
+  <aside class="contact-panel hidden" id="contact-panel">
+    <div class="contact-panel-header">
+      <span class="contact-panel-avatar-wrap" id="contact-panel-avatar-wrap"></span>
+      <div class="contact-panel-name" id="contact-panel-name"></div>
+      <div class="contact-panel-handle" id="contact-panel-handle"></div>
+      <div class="contact-panel-status" id="contact-panel-status"></div>
+    </div>
+
+    <div class="contact-panel-section">
+      <h4>О себе</h4>
+      <p class="contact-panel-about" id="contact-panel-about"></p>
+    </div>
+
+    <div class="contact-panel-section" id="contact-panel-joined-section">
+      <h4>На платформе с</h4>
+      <p class="contact-panel-joined" id="contact-panel-joined"></p>
+    </div>
+
+    <div class="contact-panel-section">
+      <h4>Заметка <span class="contact-panel-hint">(видна только вам)</span></h4>
+      <textarea id="contact-panel-note" rows="4" maxlength="500" placeholder="Например: где познакомились, дата рождения, что подарить..."></textarea>
+    </div>
+  </aside>
+</div>
+
+<!-- Модалка настроек -->
+<div id="settings-modal" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <span>Настройки</span>
+      <button id="settings-close-btn" class="modal-close" title="Закрыть">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <section class="settings-section">
+        <h3>Профиль</h3>
+        <p class="settings-hint">Видно твоим друзьям — хранится на сервере и обновляется у них сразу.</p>
+
+        <div class="settings-avatar-row">
+          <span class="settings-avatar-preview" id="settings-avatar-preview"></span>
+          <div class="settings-avatar-actions">
+            <button type="button" id="avatar-upload-btn" class="btn-secondary">Сменить аватар</button>
+            <button type="button" id="avatar-remove-btn" class="btn-text">Убрать</button>
+            <input type="file" id="avatar-file-input" accept="image/*" class="hidden" />
+          </div>
+        </div>
+
+        <label class="settings-field">
+          О себе
+          <textarea id="about-me-input" maxlength="200" rows="3" placeholder="Расскажи о себе..."></textarea>
+        </label>
+      </section>
+
+      <section class="settings-section">
+        <h3>Юзернейм (@)</h3>
+        <p class="settings-hint">По этому имени тебя ищут в друзья — оно отдельное от ника при регистрации и может от него отличаться.</p>
+        <div class="settings-handle-row">
+          <span class="handle-at">@</span>
+          <input type="text" id="handle-input" placeholder="например: defik" maxlength="20" />
+          <button type="button" id="save-handle-btn" class="btn-secondary">Сохранить</button>
+        </div>
+        <div class="auth-error" id="handle-error"></div>
+      </section>
+
+      <section class="settings-section">
+        <h3>Тема оформления</h3>
+        <div class="theme-options" id="theme-options">
+          <button type="button" class="theme-swatch" data-theme="blue">
+            <span class="theme-swatch-dot theme-swatch-blue"></span>
+            Синяя
+          </button>
+          <button type="button" class="theme-swatch" data-theme="green">
+            <span class="theme-swatch-dot theme-swatch-green"></span>
+            Зелёная
+          </button>
+          <button type="button" class="theme-swatch" data-theme="purple">
+            <span class="theme-swatch-dot theme-swatch-purple"></span>
+            Фиолетовая
+          </button>
+          <button type="button" class="theme-swatch" data-theme="black">
+            <span class="theme-swatch-dot theme-swatch-black"></span>
+            Чёрная
+          </button>
+        </div>
+      </section>
+
+      <section class="settings-section">
+        <h3>Папки чатов</h3>
+        <p class="settings-hint">Только на этом устройстве — просто личная сортировка твоих ЛС, ни на что другое не влияет.</p>
+
+        <div id="folders-list"></div>
+
+        <div class="folder-create-row">
+          <input type="text" id="new-folder-name" placeholder="Название папки" maxlength="24" />
+          <button type="button" id="create-folder-btn" class="btn-secondary">Создать</button>
+        </div>
+      </section>
+
+      <section class="settings-section">
+        <h3>Уведомления</h3>
+        <label class="settings-toggle-row">
+          <input type="checkbox" id="notifications-toggle" />
+          Уведомлять о новых сообщениях, когда окно свёрнуто
+        </label>
+      </section>
+
+      <section class="settings-section">
+        <h3>Данные</h3>
+        <button type="button" id="clear-local-data-btn" class="btn-danger">Очистить локальные настройки (тема, папки, уведомления)</button>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- Модалка заявок в друзья -->
+<div id="friend-requests-modal" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <span>Заявки в друзья</span>
+      <button id="friend-requests-close-btn" class="modal-close" title="Закрыть">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="friend-requests-list"></div>
+    </div>
+  </div>
+</div>
+
+<script src="renderer.js"></script>
+</body>
+</html>

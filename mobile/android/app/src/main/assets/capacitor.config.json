@@ -1,0 +1,10 @@
+{
+	"appId": "com.techmagic.fnlink",
+	"appName": "FNLink",
+	"webDir": "www",
+	"plugins": {
+		"CapacitorHttp": {
+			"enabled": true
+		}
+	}
+}
