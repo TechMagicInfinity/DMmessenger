@@ -1,0 +1,85 @@
+name: Android APK
+
+# Запускается вручную: Actions -> Android APK -> Run workflow,
+# в поле tag укажите тег УЖЕ существующего релиза (например v1.2.8).
+# Готовый подписанный APK добавится к этому релизу.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Тег существующего релиза (например v1.2.8)'
+        required: true
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # нужно, чтобы прикрепить файл к релизу
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Установить зависимости и скопировать веб-файлы
+        working-directory: mobile
+        run: |
+          npm ci
+          npm run sync
+
+      - name: Прописать версию
+        working-directory: mobile/android/app
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          VERSION_NAME="${INPUT_TAG#v}"
+          # versionCode обязан расти с каждой сборкой, иначе Android не обновит приложение
+          sed -i "s/versionCode [0-9]*/versionCode ${{ github.run_number }}/" build.gradle
+          sed -i "s/versionName \".*\"/versionName \"${VERSION_NAME}\"/" build.gradle
+          grep -n "versionCode\|versionName" build.gradle
+
+      - name: Собрать release APK (без подписи)
+        working-directory: mobile/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease
+
+      - name: Подписать APK
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/fnlink.keystore"
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          UNSIGNED=$(ls mobile/android/app/build/outputs/apk/release/*.apk | head -1)
+          "$BT/zipalign" -f -p 4 "$UNSIGNED" "$RUNNER_TEMP/aligned.apk"
+          "$BT/apksigner" sign \
+            --ks "$RUNNER_TEMP/fnlink.keystore" \
+            --ks-key-alias "$KEY_ALIAS" \
+            --ks-pass env:KEYSTORE_PASSWORD \
+            --key-pass env:KEY_PASSWORD \
+            --out "FNLink-${INPUT_TAG}.apk" \
+            "$RUNNER_TEMP/aligned.apk"
+          "$BT/apksigner" verify --print-certs "FNLink-${INPUT_TAG}.apk"
+
+      - name: Сохранить APK как артефакт (на случай проблем с релизом)
+        uses: actions/upload-artifact@v4
+        with:
+          name: FNLink-apk
+          path: FNLink-${{ inputs.tag }}.apk
+
+      - name: Прикрепить APK к релизу
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag }}
+          files: FNLink-${{ inputs.tag }}.apk
