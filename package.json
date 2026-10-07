@@ -28,7 +28,8 @@
     "productName": "FNLink",
     "files": [
       "**/*",
-      "!**/node_modules/electron-builder${/*}"
+      "!**/node_modules/electron-builder${/*}",
+      "!mobile/**"
     ],
     "directories": {
       "output": "dist"
