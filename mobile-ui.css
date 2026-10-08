@@ -1,0 +1,245 @@
+/* Мобильная версия FNLink (телефон, узкое окно).
+   Подключается ПОСЛЕ styles.css. На компьютере (окно от 720 px) ничего не меняет.
+   Логика как в Telegram: сначала список чатов, по нажатию открывается чат
+   на весь экран, кнопка «назад» возвращает к списку. */
+
+/* элементы, которые нужны только на телефоне, на компьютере скрыты */
+.mobile-back-btn,
+.contact-back-btn {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  html, body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    overscroll-behavior: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  input, textarea, select {
+    font-size: 16px !important; /* без автоприближения при фокусе */
+  }
+
+  /* ---------- вход / регистрация ---------- */
+  #auth-screen:not(.hidden) {
+    height: 100vh;
+    height: 100dvh;
+    box-sizing: border-box;
+    padding: env(safe-area-inset-top, 0px) 16px env(safe-area-inset-bottom, 0px);
+    overflow-y: auto;
+  }
+  .auth-card {
+    width: 100% !important;
+    max-width: 420px !important;
+    box-sizing: border-box;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* ---------- основной экран: одна колонка ---------- */
+  #chat-screen:not(.hidden) {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    height: 100vh;
+    height: 100dvh;
+    box-sizing: border-box;
+    padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px);
+    overflow: hidden;
+  }
+
+  /* папки чатов: полоса вкладок сверху, как в Telegram */
+  .folder-rail {
+    display: flex !important;
+    flex-direction: row !important;
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    gap: 6px;
+    padding: 6px 8px !important;
+    overflow-x: auto;
+    overflow-y: hidden;
+    box-sizing: border-box;
+    border-right: none !important;
+  }
+  .folder-rail > * {
+    flex: 0 0 auto;
+  }
+
+  /* список чатов на весь экран */
+  .sidebar {
+    display: flex !important;
+    flex-direction: column;
+    flex: 1 1 auto !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-height: 0;
+    border-right: none !important;
+  }
+  .sidebar-header {
+    flex: 0 0 auto;
+  }
+  .chat-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .sidebar-footer {
+    flex: 0 0 auto;
+  }
+  .sidebar-header button,
+  .chat-header-actions button {
+    min-width: 40px;
+    min-height: 40px;
+  }
+
+  /* чат скрыт, пока не выбран собеседник */
+  #chat-screen:not(.chat-open) .chat-main {
+    display: none !important;
+  }
+
+  /* когда чат открыт: список и папки скрыты, чат на весь экран */
+  #chat-screen.chat-open .folder-rail,
+  #chat-screen.chat-open .sidebar {
+    display: none !important;
+  }
+  #chat-screen.chat-open .chat-main {
+    display: flex !important;
+    flex-direction: column;
+    flex: 1 1 auto;
+    width: 100% !important;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  /* шапка чата с кнопкой «назад» */
+  .chat-header {
+    display: flex !important;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+  }
+  .chat-header #current-chat-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .mobile-back-btn,
+  .contact-back-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+  }
+
+  /* сообщения */
+  .messages {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  .messages > * {
+    max-width: 88%;
+    overflow-wrap: anywhere;
+  }
+
+  /* поле ввода: закруглённое, справа круглая кнопка отправки */
+  .send-form {
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto;
+    padding: 8px 10px !important;
+    box-sizing: border-box;
+  }
+  #message-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 10px 14px;
+    border-radius: 22px;
+  }
+  .send-form button[type="submit"] {
+    flex: 0 0 auto;
+    position: relative;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 0; /* прячем слово «Отправить» */
+  }
+  .send-form button[type="submit"]::after {
+    content: "\27A4"; /* ➤ */
+    font-size: 18px;
+    line-height: 44px;
+  }
+
+  /* карточка собеседника открывается поверх всего */
+  .contact-panel:not(.hidden) {
+    display: block !important;
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 50;
+    width: 100% !important;
+    max-width: none !important;
+    box-sizing: border-box;
+    padding: calc(12px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px));
+    overflow-y: auto;
+    background: #14161a;
+  }
+  .contact-panel textarea {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* окна «Настройки» и «Заявки» на весь экран */
+  .modal-overlay {
+    padding: 0 !important;
+    align-items: stretch !important;
+    justify-content: stretch !important;
+  }
+  .modal {
+    display: flex !important;
+    flex-direction: column;
+    width: 100% !important;
+    max-width: none !important;
+    height: 100% !important;
+    max-height: none !important;
+    border-radius: 0 !important;
+    box-sizing: border-box;
+  }
+  .modal-header {
+    padding-top: calc(12px + env(safe-area-inset-top, 0px)) !important;
+    flex: 0 0 auto;
+  }
+  .modal-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+  .settings-handle-row,
+  .folder-create-row,
+  .theme-options {
+    flex-wrap: wrap;
+  }
+}
