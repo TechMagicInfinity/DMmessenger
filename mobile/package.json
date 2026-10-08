@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "sync": "rm -rf www && mkdir www && cp ../index.html ../renderer.js ../styles.css www/ && cp -r ../assets www/ && npx cap sync android"
+    "sync": "rm -rf www && mkdir www && cp ../index.html ../renderer.js ../styles.css ../mobile-ui.css ../mobile-ui.js www/ && cp -r ../assets www/ && npx cap sync android"
   },
   "keywords": [],
   "author": "",
