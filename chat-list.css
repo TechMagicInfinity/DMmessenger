@@ -1,0 +1,169 @@
+/* Список чатов в стиле Telegram.
+   Подключается ПОСЛЕ styles.css и ДО mobile-ui.css: переопределяет ширину
+   колонки и вид строки чата; мобильные правила по-прежнему идут сверху. */
+
+/* колонка шире: от 280 до 380 px в зависимости от ширины окна */
+.sidebar {
+  width: clamp(280px, 32vw, 380px);
+}
+
+.chat-list {
+  padding: 6px 8px;
+  gap: 2px;
+}
+
+.chat-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+  padding: 9px 10px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.chat-item:hover {
+  background: var(--bg-2);
+}
+
+.chat-item.active {
+  background: var(--accent-dim);
+  color: #ffffff;
+}
+
+/* ---------- аватарка ---------- */
+
+.chat-avatar-wrap {
+  position: relative;
+  flex: 0 0 48px;
+  width: 48px;
+  height: 48px;
+}
+
+.chat-avatar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  font-size: 19px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+/* иконки трёх особых пользователей в большом кружке */
+.chat-avatar .badge-technomage-icon svg,
+.chat-avatar .badge-glacio-icon svg {
+  width: 26px;
+  height: 26px;
+}
+
+.chat-avatar .badge-mercury-icon img {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+}
+
+/* кружок «в сети» в углу аватарки; рамка того же цвета, что фон строки */
+.chat-avatar-dot {
+  display: none;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 13px;
+  height: 13px;
+  box-sizing: border-box;
+  border: 2px solid var(--bg-1);
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.chat-avatar-dot.online {
+  display: block;
+}
+
+.chat-item:hover .chat-avatar-dot {
+  border-color: var(--bg-2);
+}
+
+.chat-item.active .chat-avatar-dot {
+  border-color: var(--accent-dim);
+}
+
+/* ---------- ник, время, последнее сообщение ---------- */
+
+.chat-item-body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.chat-item-top {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.chat-item-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.chat-item.active .chat-item-name {
+  color: #ffffff;
+}
+
+.chat-item-time {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.chat-item-preview {
+  display: block;
+  min-height: 1.3em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  line-height: 1.3;
+  color: var(--text-dim);
+}
+
+.chat-item-preview .you {
+  color: var(--accent);
+}
+
+.chat-item-preview.empty {
+  font-style: italic;
+  opacity: 0.7;
+}
+
+.chat-item.active .chat-item-time,
+.chat-item.active .chat-item-preview {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.chat-item.active .chat-item-preview .you {
+  color: #ffffff;
+}
