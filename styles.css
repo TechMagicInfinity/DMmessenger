@@ -1388,3 +1388,44 @@ html, body {
   outline: none;
   border-color: var(--accent-dim);
 }
+
+/* ---------- Шифрование в настройках ---------- */
+
+#key-warning {
+  margin:8px 8px 0;
+  padding:8px 10px;
+  border-radius:8px;
+  font-size:12px;
+  line-height:1.4;
+  background:rgba(245,158,11,.14);
+  border:1px solid rgba(245,158,11,.5);
+  color:var(--text)
+}
+#key-warning button {
+  margin-top:6px;
+  display:block
+}
+#e2e-section input,#e2e-section textarea {
+  width:100%;
+  box-sizing:border-box;
+  background:var(--bg-2);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:8px 10px;
+  color:var(--text);
+  font-size:13px;
+  font-family:var(--font-sans)
+}
+#e2e-section textarea {
+  resize:vertical;
+  margin-top:8px
+}
+#e2e-section .e2e-row {
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:8px
+}
+#e2e-section label.settings-field {
+  margin-top:10px
+}

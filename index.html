@@ -227,6 +227,27 @@
         <h3>Данные</h3>
         <button type="button" id="clear-local-data-btn" class="btn-danger">Очистить локальные настройки (тема, папки, уведомления)</button>
       </section>
+      
+      <section id="e2e-section" class="settings-section">
+        <h3>Шифрование</h3>
+        <p class="settings-hint" id="e2e-status"></p>
+        <p class="settings-hint">Отпечаток ключа этого устройства: <b id="e2e-fp">нет</b></p>
+        <label class="settings-field">Пароль для переноса ключа (придумайте сами, не короче 8 символов; тот же пароль понадобится на другом устройстве)
+          <input type="password" id="e2e-pass" autocomplete="new-password" />
+        </label>
+        <div class="e2e-row"><button type="button" class="btn-secondary" id="e2e-export-btn">Экспортировать ключ</button></div>
+        <textarea id="e2e-export-out" rows="3" readonly placeholder="Здесь появится ключ для переноса"></textarea>
+        <label class="settings-field">Ключ с другого устройства
+          <textarea id="e2e-import-in" rows="3" placeholder="Вставьте сюда ключ (начинается с FNKEY1.)"></textarea>
+        </label>
+        <div class="e2e-row"><button type="button" class="btn-secondary" id="e2e-import-btn">Импортировать ключ</button></div>
+        <div class="e2e-row">
+          <button type="button" class="btn-text hidden" id="e2e-takeover-btn">Сделать ключ этого устройства основным</button>
+          <button type="button" class="btn-text hidden" id="e2e-create-btn">Создать новый ключ на этом устройстве</button>
+        </div>
+        <p class="settings-hint">Ключ открывает доступ ко всей вашей переписке. Переносите его только на свои устройства и никому не показывайте.</p>
+        <div class="auth-error" id="e2e-msg"></div>
+      </section>
     </div>
   </div>
 </div>

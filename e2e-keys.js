@@ -225,19 +225,6 @@
 
   // ---------- интерфейс ----------
 
-  const style = document.createElement('style');
-  style.textContent =
-    '#key-warning{margin:8px 8px 0;padding:8px 10px;border-radius:8px;font-size:12px;line-height:1.4;' +
-    'background:rgba(245,158,11,.14);border:1px solid rgba(245,158,11,.5);color:var(--text)}' +
-    '#key-warning button{margin-top:6px;display:block}' +
-    '#e2e-section input,#e2e-section textarea{width:100%;box-sizing:border-box;background:var(--bg-2);' +
-    'border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-size:13px;' +
-    'font-family:var(--font-sans)}' +
-    '#e2e-section textarea{resize:vertical;margin-top:8px}' +
-    '#e2e-section .e2e-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}' +
-    '#e2e-section label.settings-field{margin-top:10px}';
-  document.head.appendChild(style);
-
   // плашка-предупреждение в боковой колонке
   const warning = document.createElement('div');
   warning.id = 'key-warning';
@@ -254,30 +241,6 @@
   warningBtn.addEventListener('click', () => settingsBtn.click());
 
   // раздел «Шифрование» в Настройках
-  const body = document.querySelector('#settings-modal .modal-body');
-  const section = document.createElement('section');
-  section.className = 'settings-section';
-  section.id = 'e2e-section';
-  section.innerHTML =
-    '<h3>Шифрование</h3>' +
-    '<p class="settings-hint" id="e2e-status"></p>' +
-    '<p class="settings-hint">Отпечаток ключа этого устройства: <b id="e2e-fp">нет</b></p>' +
-    '<label class="settings-field">Пароль для переноса ключа (придумайте сами, не короче 8 символов; ' +
-    'тот же пароль понадобится на другом устройстве)' +
-    '<input type="password" id="e2e-pass" autocomplete="new-password" /></label>' +
-    '<div class="e2e-row"><button type="button" class="btn-secondary" id="e2e-export-btn">Экспортировать ключ</button></div>' +
-    '<textarea id="e2e-export-out" rows="3" readonly placeholder="Здесь появится ключ для переноса"></textarea>' +
-    '<label class="settings-field">Ключ с другого устройства' +
-    '<textarea id="e2e-import-in" rows="3" placeholder="Вставьте сюда ключ (начинается с FNKEY1.)"></textarea></label>' +
-    '<div class="e2e-row"><button type="button" class="btn-secondary" id="e2e-import-btn">Импортировать ключ</button></div>' +
-    '<div class="e2e-row">' +
-    '<button type="button" class="btn-text hidden" id="e2e-takeover-btn">Сделать ключ этого устройства основным</button>' +
-    '<button type="button" class="btn-text hidden" id="e2e-create-btn">Создать новый ключ на этом устройстве</button>' +
-    '</div>' +
-    '<p class="settings-hint">Ключ открывает доступ ко всей вашей переписке. Переносите его только ' +
-    'на свои устройства и никому не показывайте.</p>' +
-    '<div class="auth-error" id="e2e-msg"></div>';
-  if (body) body.appendChild(section);
 
   const $ = (id) => document.getElementById(id);
   const statusEl = $('e2e-status');
